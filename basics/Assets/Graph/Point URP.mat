@@ -21,7 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Point URP
-  m_Shader: {fileID: -6465566751694194690, guid: 95079178b84b6ed4dbb5aefc2510092c, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: c03c3966b180a0e40993d37ba3ab15fa, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0

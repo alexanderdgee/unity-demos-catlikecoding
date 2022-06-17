@@ -33,5 +33,18 @@ public class FunctionManager : MonoBehaviour
         {
             graph.SetFunction(FunctionLibrary.FunctionName.TorusStar);
         }
+
+        if (Input.GetKeyDown(KeyCode.N))
+        {
+            graph.SetTransitionMode(Graph.TransitionMode.None);
+        }
+        else if (Input.GetKeyDown(KeyCode.C))
+        {
+            graph.SetTransitionMode(Graph.TransitionMode.Cycle);
+        }
+        else if (Input.GetKeyDown(KeyCode.R))
+        {
+            graph.SetTransitionMode(Graph.TransitionMode.Random);
+        }
     }
 }
