@@ -13,17 +13,6 @@ public static class FunctionLibrary
         TorusStar
     }
 
-    public static FunctionName GetNextFunctionName(FunctionName name)
-    {
-        return (int)name < functions.Length - 1 ? name + 1 : 0;
-    }
-
-    public static FunctionName GetRandomFunctionNameOtherThan(FunctionName name)
-    {
-        var choice = (FunctionName)Random.Range(1, functions.Length);
-        return choice == name ? 0 : choice;
-    }
-
     static Function[] functions = {
         Wave,
         MultiWave,
@@ -33,14 +22,27 @@ public static class FunctionLibrary
         TorusStar
     };
 
-    public static Function GetFunction(FunctionName name)
+    public static int FunctionCount => functions.Length;
+
+    public static Function GetFunction(FunctionName name) => functions[GetFunctionIndexSafe(name)];
+
+    public static FunctionName GetNextFunctionName(FunctionName name)
+        => GetFunctionIndexSafe(name) < functions.Length - 1 ? name + 1 : 0;
+
+    public static FunctionName GetRandomFunctionNameOtherThan(FunctionName name)
     {
-        int index = (int) name;
+        var choice = (FunctionName)Random.Range(1, functions.Length);
+        return choice == name ? 0 : choice;
+    }
+
+    public static int GetFunctionIndexSafe(FunctionName name)
+    {
+        int index = (int)name;
         if (index < 0 || index > functions.Length)
         {
-            index = 0;
+            return 0;
         }
-        return functions[index];
+        return index;
     }
 
     public static Vector3 Wave(float u, float v, float t)

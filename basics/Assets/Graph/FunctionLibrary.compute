@@ -1,0 +1,238 @@
+#pragma kernel WaveKernel
+#pragma kernel WaveToMultiWaveKernel
+#pragma kernel WaveToRippleKernel
+#pragma kernel WaveToSphereCollapsingKernel
+#pragma kernel WaveToSphereBandedRotatingKernel
+#pragma kernel WaveToTorusStarKernel
+
+#pragma kernel MultiWaveToWaveKernel
+#pragma kernel MultiWaveKernel
+#pragma kernel MultiWaveToRippleKernel
+#pragma kernel MultiWaveToSphereCollapsingKernel
+#pragma kernel MultiWaveToSphereBandedRotatingKernel
+#pragma kernel MultiWaveToTorusStarKernel
+
+#pragma kernel RippleToWaveKernel
+#pragma kernel RippleToMultiWaveKernel
+#pragma kernel RippleKernel
+#pragma kernel RippleToSphereCollapsingKernel
+#pragma kernel RippleToSphereBandedRotatingKernel
+#pragma kernel RippleToTorusStarKernel
+
+#pragma kernel SphereCollapsingToWaveKernel
+#pragma kernel SphereCollapsingToMultiWaveKernel
+#pragma kernel SphereCollapsingToRippleKernel
+#pragma kernel SphereCollapsingKernel
+#pragma kernel SphereCollapsingToSphereBandedRotatingKernel
+#pragma kernel SphereCollapsingToTorusStarKernel
+
+#pragma kernel SphereBandedRotatingToWaveKernel
+#pragma kernel SphereBandedRotatingToMultiWaveKernel
+#pragma kernel SphereBandedRotatingToRippleKernel
+#pragma kernel SphereBandedRotatingToSphereCollapsingKernel
+#pragma kernel SphereBandedRotatingKernel
+#pragma kernel SphereBandedRotatingToTorusStarKernel
+
+#pragma kernel TorusStarToWaveKernel
+#pragma kernel TorusStarToMultiWaveKernel
+#pragma kernel TorusStarToRippleKernel
+#pragma kernel TorusStarToSphereCollapsingKernel
+#pragma kernel TorusStarToSphereBandedRotatingKernel
+#pragma kernel TorusStarKernel
+
+RWStructuredBuffer<float3> _Positions;
+
+uint _Resolution;
+
+float _Step, _Time, _TransitionProgress;
+
+float2 GetUV(uint3 id) {
+    return (id.xy + 0.5) * _Step - 1.0;
+}
+
+void SetPosition(uint3 id, float3 position) {
+    if (id.x < _Resolution && id.y < _Resolution) {
+        _Positions[id.x + id.y * _Resolution] = position;
+    }
+}
+
+#define PI 3.14159265358979323846
+
+float3 Wave(float u, float v, float t)
+{
+    float3 p;
+    p.x = u;
+    p.y = sin(PI * (u + v + t));
+    p.z = v;
+    return p;
+}
+
+float3 MultiWave(float u, float v, float t)
+{
+    float3 p;
+    p.x = u;
+    p.y = sin(PI * (u + 0.5 * t));
+    p.y += 0.5 * sin(2.0 * PI * (v + t));
+    p.y += sin(PI * (u + v + 0.25 * t));
+    p.y *= 2.0 / 5.0;
+    p.z = v;
+    return p;
+}
+
+float3 Ripple(float u, float v, float t) {
+    float3 p;
+    p.x = u;
+	float d = sqrt(u * u + v * v);
+	p.y = sin(PI * (4.0 * d - t));
+	p.y /= (1.0 + 10.0 * d);
+	p.z = v;
+	return p;
+}
+
+float3 Sphere(float u, float v, float t)
+{
+    float r = cos(0.5 * PI * v);
+    float3 p;
+    p.x = r * sin(PI * u);
+    p.y = sin(PI * 0.5 * v);
+    p.z = r * cos(PI * u);
+    return p;
+}
+
+float3 SphereCollapsing(float u, float v, float t)
+{
+    float r = 0.5 + 0.5 * sin(PI * t);
+    float s = r * cos(0.5 * PI * v);
+    float3 p;
+    p.x = s * sin(PI * u);
+    p.y = r * sin(PI * 0.5 * v);
+    p.z = s * cos(PI * u);
+    return p;
+}
+
+float3 SphereBandedRotating(float u, float v, float t)
+{
+    float r = 0.9 + 0.1 * sin(PI * (6.0 * u + 4.0 * v + t));
+    float s = r * cos(0.5 * PI * v);
+    float3 p;
+    p.x = s * sin(PI * u);
+    p.y = r * sin(PI * 0.5 * v);
+    p.z = s * cos(PI * u);
+    return p;
+}
+
+float3 TorusRing(float u, float v, float t)
+{
+    float r1 = 0.75;
+    float r2 = 0.25;
+    float s = r1 + r2 * cos(PI * v);
+    float3 p;
+    p.x = s * sin(PI * u);
+    p.y = r2 * sin(PI * v);
+    p.z = s * cos(PI * u);
+    return p;
+}
+
+float3 TorusStar(float u, float v, float t)
+{
+    float r1 = 0.7 + 0.1 * sin(PI * (6.0 * u + 0.5 * t));
+    float r2 = 0.15 + 0.05 * sin(PI * (8.0 * u + 4.0 * v + 2.0 * t));
+    float s = r1 + r2 * cos(PI * v);
+    float3 p;
+    p.x = s * sin(PI * u);
+    p.y = r2 * sin(PI * v);
+    p.z = s * cos(PI * u);
+    return p;
+}
+
+#define KERNEL_FUNCTION(function) \
+[numthreads(8,8,1)] \
+void function##Kernel(uint3 id : SV_DispatchThreadID) \
+{ \
+    float2 uv = GetUV(id); \
+    SetPosition(id, function(uv.x, uv.y, _Time)); \
+}
+
+KERNEL_FUNCTION(Wave)
+KERNEL_FUNCTION(MultiWave)
+KERNEL_FUNCTION(Ripple)
+KERNEL_FUNCTION(Sphere)
+KERNEL_FUNCTION(SphereCollapsing)
+KERNEL_FUNCTION(SphereBandedRotating)
+KERNEL_FUNCTION(TorusRing)
+KERNEL_FUNCTION(TorusStar)
+
+#define KERNEL_MORPH_FUNCTION(functionA, functionB) \
+[numthreads(8, 8, 1)] \
+void functionA##To##functionB##Kernel(uint3 id : SV_DispatchThreadID) \
+{ \
+	float2 uv = GetUV(id); \
+	float3 position = lerp( \
+		functionA(uv.x, uv.y, _Time), functionB(uv.x, uv.y, _Time), \
+		_TransitionProgress); \
+	SetPosition(id, position); \
+}
+
+KERNEL_MORPH_FUNCTION(Wave, MultiWave);
+KERNEL_MORPH_FUNCTION(Wave, Ripple);
+KERNEL_MORPH_FUNCTION(Wave, Sphere);
+KERNEL_MORPH_FUNCTION(Wave, SphereCollapsing);
+KERNEL_MORPH_FUNCTION(Wave, SphereBandedRotating);
+KERNEL_MORPH_FUNCTION(Wave, TorusRing);
+KERNEL_MORPH_FUNCTION(Wave, TorusStar);
+
+KERNEL_MORPH_FUNCTION(MultiWave, Wave);
+KERNEL_MORPH_FUNCTION(MultiWave, Ripple);
+KERNEL_MORPH_FUNCTION(MultiWave, Sphere);
+KERNEL_MORPH_FUNCTION(MultiWave, SphereCollapsing);
+KERNEL_MORPH_FUNCTION(MultiWave, SphereBandedRotating);
+KERNEL_MORPH_FUNCTION(MultiWave, TorusRing);
+KERNEL_MORPH_FUNCTION(MultiWave, TorusStar);
+
+KERNEL_MORPH_FUNCTION(Ripple, Wave);
+KERNEL_MORPH_FUNCTION(Ripple, MultiWave);
+KERNEL_MORPH_FUNCTION(Ripple, Sphere);
+KERNEL_MORPH_FUNCTION(Ripple, SphereCollapsing);
+KERNEL_MORPH_FUNCTION(Ripple, SphereBandedRotating);
+KERNEL_MORPH_FUNCTION(Ripple, TorusRing);
+KERNEL_MORPH_FUNCTION(Ripple, TorusStar);
+
+KERNEL_MORPH_FUNCTION(Sphere, Wave);
+KERNEL_MORPH_FUNCTION(Sphere, MultiWave);
+KERNEL_MORPH_FUNCTION(Sphere, Ripple);
+KERNEL_MORPH_FUNCTION(Sphere, SphereCollapsing);
+KERNEL_MORPH_FUNCTION(Sphere, SphereBandedRotating);
+KERNEL_MORPH_FUNCTION(Sphere, TorusRing);
+KERNEL_MORPH_FUNCTION(Sphere, TorusStar);
+
+KERNEL_MORPH_FUNCTION(SphereCollapsing, Wave);
+KERNEL_MORPH_FUNCTION(SphereCollapsing, MultiWave);
+KERNEL_MORPH_FUNCTION(SphereCollapsing, Ripple);
+KERNEL_MORPH_FUNCTION(SphereCollapsing, Sphere);
+KERNEL_MORPH_FUNCTION(SphereCollapsing, SphereBandedRotating);
+KERNEL_MORPH_FUNCTION(SphereCollapsing, TorusRing);
+KERNEL_MORPH_FUNCTION(SphereCollapsing, TorusStar);
+
+KERNEL_MORPH_FUNCTION(SphereBandedRotating, Wave);
+KERNEL_MORPH_FUNCTION(SphereBandedRotating, MultiWave);
+KERNEL_MORPH_FUNCTION(SphereBandedRotating, Ripple);
+KERNEL_MORPH_FUNCTION(SphereBandedRotating, Sphere);
+KERNEL_MORPH_FUNCTION(SphereBandedRotating, SphereCollapsing);
+KERNEL_MORPH_FUNCTION(SphereBandedRotating, TorusRing);
+KERNEL_MORPH_FUNCTION(SphereBandedRotating, TorusStar);
+
+KERNEL_MORPH_FUNCTION(TorusRing, Wave);
+KERNEL_MORPH_FUNCTION(TorusRing, MultiWave);
+KERNEL_MORPH_FUNCTION(TorusRing, Ripple);
+KERNEL_MORPH_FUNCTION(TorusRing, Sphere);
+KERNEL_MORPH_FUNCTION(TorusRing, SphereCollapsing);
+KERNEL_MORPH_FUNCTION(TorusRing, SphereBandedRotating);
+KERNEL_MORPH_FUNCTION(TorusRing, TorusStar);
+
+KERNEL_MORPH_FUNCTION(TorusStar, Wave);
+KERNEL_MORPH_FUNCTION(TorusStar, MultiWave);
+KERNEL_MORPH_FUNCTION(TorusStar, Ripple);
+KERNEL_MORPH_FUNCTION(TorusStar, Sphere);
+KERNEL_MORPH_FUNCTION(TorusStar, SphereCollapsing);
+KERNEL_MORPH_FUNCTION(TorusStar, SphereBandedRotating);
+KERNEL_MORPH_FUNCTION(TorusStar, TorusRing);
