@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Graph/Shaders.unity
+    guid: 6faf9389eb204d0468d3192a367b8e6b
   m_configObjects: {}
